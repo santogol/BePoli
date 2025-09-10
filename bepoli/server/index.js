@@ -1,6 +1,5 @@
 // index.js — BePoli backend (CommonJS)
 
-// Env
 require('dotenv').config()
 
 // Core deps
@@ -31,7 +30,6 @@ const {
 const isProd = NODE_ENV === 'production'
 const __dirnameResolved = __dirname
 
-
 // ===== App =====
 const app = express()
 app.set('trust proxy', 1)
@@ -54,7 +52,7 @@ app.use(cors({
   credentials: true
 }))
 
-// COOP/COEP come nel tuo file
+// COOP/COEP
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp')
@@ -149,7 +147,7 @@ app.get('/csrf-token', (req, res, next) => { req.session.touch(); next() }, csrf
   res.json({ csrfToken: req.csrfToken() })
 })
 
-// Root (in dev mostra login.html; in prod lo gestiamo sotto con la SPA)
+// Root (dev: login.html; prod: SPA)
 if (!isProd) {
   app.get('/', (req, res) => {
     res.sendFile(path.join(__dirnameResolved, 'public/login.html'))
@@ -465,7 +463,7 @@ app.post('/api/posts', checkFingerprint, upload.single('image'), async (req, res
   }
 })
 
-// Feed paginato filtrato per location + fallback aggregate (come il tuo)
+// Feed paginato filtrato per location + fallback aggregate
 app.get('/api/posts', async (req, res) => {
   const page = parseInt(req.query.page) || 1
   const pageSize = 10
@@ -520,13 +518,9 @@ app.get('/api/posts', async (req, res) => {
           { $sort: { createdAt: -1 } },
           { $skip: (page - 1) * pageSize },
           { $limit: pageSize },
-          {
-            $lookup: { from: 'utentes', localField: 'userId', foreignField: '_id', as: 'user' }
-          },
+          { $lookup: { from: 'utentes', localField: 'userId', foreignField: '_id', as: 'user' } },
           { $unwind: '$user' },
-          {
-            $lookup: { from: 'utentes', localField: 'comments.userId', foreignField: '_id', as: 'commentUsers' }
-          },
+          { $lookup: { from: 'utentes', localField: 'comments.userId', foreignField: '_id', as: 'commentUsers' } },
           {
             $addFields: {
               comments: {
@@ -682,18 +676,7 @@ if (isProd) {
   app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')))
 }
 
-
-if (process.env.NODE_ENV === 'production') {
-  const path = require('path')
-  const clientDist = path.join(__dirname, '../client/dist')
-  app.use(express.static(clientDist))
-  app.get('*', (req,res)=>res.sendFile(path.join(clientDist,'index.html')))
-}
 /* ===== START ===== */
 app.listen(PORT, '0.0.0.0', () => {
   console.log(Server attivo su porta ${PORT} (${NODE_ENV}))
 })
-
-
-
-
