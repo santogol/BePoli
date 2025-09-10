@@ -1,13 +1,19 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
-import './styles/style.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+function Home() { return <h1>BePoli React è online ✅</h1> }
+function Login() { return <p>Login placeholder</p> }
+
+function App() {
+  return (
     <BrowserRouter>
-      <App/>
+      <Routes>
+        <Route path="/" element={<Home/>}/>
+        <Route path="/login" element={<Login/>}/>
+      </Routes>
     </BrowserRouter>
-  </React.StrictMode>
-)
+  )
+}
+
+createRoot(document.getElementById('root')).render(<App/>)
