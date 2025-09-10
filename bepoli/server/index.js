@@ -274,11 +274,13 @@ app.get('/api/search-users', checkFingerprint, async (req, res) => {
       .skip(skip)
       .limit(limit)
     res.json(results.map(u => ({
-      id: u._id,
-      username: u.username,
-      nome: u.nome,
-      profilePicUrl: /api/user-photo/${u._id}
-    })))
+  id: u._id,
+  username: u.username,
+  nome: u.nome,
+  profilePicUrl: photoUrl(u._id)          
+})))
+
+    
   } catch {
     res.status(500).json({ message: 'Errore ricerca' })
   }
@@ -308,11 +310,12 @@ app.get('/api/recent-users', checkFingerprint, async (req, res) => {
       .populate('utentiRecenti', 'username nome _id')
       .exec()
     const recenti = (utente?.utentiRecenti || []).map(u => ({
-      id: u._id,
-      username: u.username,
-      nome: u.nome,
-      profilePicUrl: /api/user-photo/${u._id}
-    }))
+  id: u._id,
+  username: u.username,
+  nome: u.nome,
+  profilePicUrl: photoUrl(u._id)          
+}))
+    
     res.json(recenti)
   } catch {
     res.status(500).json({ message: 'Errore caricamento recenti' })
@@ -330,8 +333,12 @@ app.get('/api/user/:id/followers', checkFingerprint, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'Utente non trovato' })
     const total = user.followers.length
     const list = user.followers.map(u => ({
-      id: u._id, nome: u.nome, username: u.username, profilePicUrl: /api/user-photo/${u._id}
-    }))
+  id: u._id,
+  nome: u.nome,
+  username: u.username,
+  profilePicUrl: photoUrl(u._id)          
+}))
+
     res.json({ total, page, limit, followers: list })
   } catch {
     res.status(500).json({ message: 'Errore nel recupero follower' })
@@ -346,9 +353,13 @@ app.get('/api/user/:id/following', checkFingerprint, async (req, res) => {
       .populate({ path: 'following', select: 'nome username _id', options: { skip, limit } })
     if (!user) return res.status(404).json({ message: 'Utente non trovato' })
     const total = user.following.length
-    const list = user.following.map(u => ({
-      id: u._id, nome: u.nome, username: u.username, profilePicUrl: /api/user-photo/${u._id}
-    }))
+    const list = user.followers.map(u => ({
+  id: u._id,
+  nome: u.nome,
+  username: u.username,
+  profilePicUrl: photoUrl(u._id)          
+}))
+
     res.json({ total, page, limit, following: list })
   } catch {
     res.status(500).json({ message: 'Errore nel recupero following' })
@@ -453,7 +464,8 @@ app.post('/api/posts', checkFingerprint, upload.single('image'), async (req, res
       desc: req.body.desc,
       location,
       createdAt: new Date(),
-      image: req.file ? { data: req.file.buffer, contentType: req.file.mimetype } : null
+      iimageUrl: post.image?.data ? postImageUrl(post._id) : null,   
+
     })
     await newPost.save()
     res.status(201).json(newPost)
@@ -494,7 +506,7 @@ app.get('/api/posts', async (req, res) => {
       desc: post.desc,
       location: post.location,
       createdAt: post.createdAt,
-      imageUrl: post.image?.data ? /api/post-image/${post._id} : null,
+      imageUrl: post.image?.data ? postImageUrl(post._id) : null,
       likes: post.likes.length,
       comments: post.comments.length,
       commentsData: post.comments.map(comment => ({
@@ -654,7 +666,7 @@ app.get('/api/user/:id/posts', checkFingerprint, async (req, res) => {
       userId: { _id: post.userId._id, username: post.userId.username, nome: post.userId.nome },
       desc: post.desc,
       createdAt: post.createdAt,
-      imageUrl: post.image?.data ? /api/post-image/${post._id} : null,
+      imageUrl: post.image?.data ? postImageUrl(post._id) : null,   
       likes: post.likes.length,
       comments: post.comments.length,
       commentsData: post.comments.map(comment => ({
@@ -680,3 +692,4 @@ if (isProd) {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(Server attivo su porta ${PORT} (${NODE_ENV}))
 })
+
