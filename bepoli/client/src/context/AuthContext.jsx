@@ -1,28 +1,20 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { api } from '../services/api'
 
-const AuthCtx = createContext(null)
-export const useAuth = () => useContext(AuthCtx)
+const Ctx = createContext(null)
+export const useAuth = () => useContext(Ctx)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null) // { _id, username, token, ... }
+  const [user, setUser] = useState(null)
 
+  // prova a riprendere sessione dal server
   useEffect(() => {
-    const raw = localStorage.getItem('auth')
-    if (raw) setUser(JSON.parse(raw))
+    api.me().then(setUser).catch(() => setUser(null))
   }, [])
 
-  const login = (authObj) => {
-    setUser(authObj)
-    localStorage.setItem('auth', JSON.stringify(authObj))
-  }
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem('auth')
-  }
+  const login = (u) => setUser(u)
+  const logout = async () => { await api.logout(); setUser(null) }
 
-  return (
-    <AuthCtx.Provider value={{ user, login, logout }}>
-      {children}
-    </AuthCtx.Provider>
-  )
+  return <Ctx.Provider value={{ user, login, logout }}>{children}</Ctx.Provider>
 }
+
