@@ -1,52 +1,37 @@
 import { useState } from 'react'
-import { useAuth } from '../context/AuthContext.jsx'
 import { Link } from 'react-router-dom'
-import { api } from '../services/api.js'
+import { api } from '../services/api'
 
 export default function PostCard({ post, onChange }) {
-  const { user } = useAuth()
-  const [comment, setComment] = useState('')
+  const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const like = async () => {
-    setBusy(true)
-    await api.likePost(user.token, post._id)
-    onChange?.()
-    setBusy(false)
-  }
-
-  const send = async (e) => {
+  const like = async () => { setBusy(true); await api.likePost(post._id); setBusy(false); onChange?.() }
+  const comment = async (e) => {
     e.preventDefault()
-    if (!comment.trim()) return
-    setBusy(true)
-    await api.commentPost(user.token, post._id, comment.trim())
-    setComment('')
-    onChange?.()
-    setBusy(false)
+    if (!text.trim()) return
+    setBusy(true); await api.commentPost(post._id, text.trim()); setText(''); setBusy(false); onChange?.()
   }
 
   return (
     <article className="post-card">
-      <header className="post-header">
-        <Link to={`/profile/${post.author._id}`} className="author">{post.author.username}</Link>
-        <span className="zone">{post.zone}</span>
+      <header>
+        <Link to={`/profile/${post.userId._id}`} className="author">{post.userId.username}</Link>
+        <span className="location">{post.location}</span>
       </header>
-      {post.image && <img className="post-image" src={post.image} alt="post"/>}
-      <p className="post-text">{post.text}</p>
-
+      {post.imageUrl && <img src={post.imageUrl} alt="" />}
+      {post.desc && <p>{post.desc}</p>}
       <div className="actions">
-        <button onClick={like} disabled={busy}>❤️ {post.likesCount || 0}</button>
+        <button onClick={like} disabled={busy}>❤️ {post.likes}</button>
+        <span>💬 {post.comments}</span>
       </div>
-
       <div className="comments">
-        {(post.comments || []).map(c => (
-          <div key={c._id} className="comment">
-            <b>{c.author.username}:</b> {c.text}
-          </div>
+        {(post.commentsData || []).slice(-3).map((c, i) => (
+          <div key={i}><b>{c.userId?.username || 'utente'}:</b> {c.text}</div>
         ))}
-        <form onSubmit={send} className="comment-form">
-          <input value={comment} onChange={e=>setComment(e.target.value)} placeholder="Aggiungi un commento..."/>
-          <button disabled={busy || !comment.trim()}>Invia</button>
+        <form onSubmit={comment} className="comment-form">
+          <input value={text} onChange={e=>setText(e.target.value)} placeholder="Aggiungi un commento..."/>
+          <button disabled={busy || !text.trim()}>Invia</button>
         </form>
       </div>
     </article>
