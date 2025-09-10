@@ -277,7 +277,8 @@ app.get('/api/search-users', checkFingerprint, async (req, res) => {
   id: u._id,
   username: u.username,
   nome: u.nome,
-  profilePicUrl: photoUrl(u._id)          
+  profilePicUrl: `/api/user-photo/${u._id}`
+      
 })))
 
     
@@ -313,7 +314,8 @@ app.get('/api/recent-users', checkFingerprint, async (req, res) => {
   id: u._id,
   username: u.username,
   nome: u.nome,
-  profilePicUrl: photoUrl(u._id)          
+  profilePicUrl: `/api/user-photo/${u._id}`
+         
 }))
     
     res.json(recenti)
@@ -336,7 +338,8 @@ app.get('/api/user/:id/followers', checkFingerprint, async (req, res) => {
   id: u._id,
   nome: u.nome,
   username: u.username,
-  profilePicUrl: photoUrl(u._id)          
+  profilePicUrl: `/api/user-photo/${u._id}`
+        
 }))
 
     res.json({ total, page, limit, followers: list })
@@ -357,7 +360,7 @@ app.get('/api/user/:id/following', checkFingerprint, async (req, res) => {
   id: u._id,
   nome: u.nome,
   username: u.username,
-  profilePicUrl: photoUrl(u._id)          
+  profilePicUrl: `/api/user-photo/${u._id}`          
 }))
 
     res.json({ total, page, limit, following: list })
@@ -464,7 +467,7 @@ app.post('/api/posts', checkFingerprint, upload.single('image'), async (req, res
       desc: req.body.desc,
       location,
       createdAt: new Date(),
-      iimageUrl: post.image?.data ? postImageUrl(post._id) : null,   
+      imageUrl: post.image?.data ? `/api/post-image/${post._id}` : null,   
 
     })
     await newPost.save()
@@ -506,7 +509,7 @@ app.get('/api/posts', async (req, res) => {
       desc: post.desc,
       location: post.location,
       createdAt: post.createdAt,
-      imageUrl: post.image?.data ? postImageUrl(post._id) : null,
+      imageUrl: post.image?.data ? `/api/post-image/${post._id}` : null,
       likes: post.likes.length,
       comments: post.comments.length,
       commentsData: post.comments.map(comment => ({
@@ -692,4 +695,5 @@ if (isProd) {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(Server attivo su porta ${PORT} (${NODE_ENV}))
 })
+
 
