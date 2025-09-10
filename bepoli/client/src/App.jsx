@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext.jsx'
+import { LocationProvider } from './context/LocationContext.jsx'
 import Header from './components/Header.jsx'
 import Home from './routes/Home.jsx'
 import Login from './routes/Login.jsx'
 import Profile from './routes/Profile.jsx'
 import EditProfile from './routes/EditProfile.jsx'
-import { AuthProvider, useAuth } from './context/AuthContext.jsx'
-import { LocationProvider } from './context/LocationContext.jsx'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -28,3 +28,5 @@ export default function App() {
     </AuthProvider>
   )
 }
+
+
