@@ -1,19 +1,28 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { api } from '../services/api'
 import { useAuth } from '../context/AuthContext.jsx'
-import { api } from '../services/api.js'
 
 export default function EditProfile() {
   const { user, login } = useAuth()
   const [bio, setBio] = useState(user?.bio || '')
-  const [avatar, setAvatar] = useState(user?.avatar || '')
+  const [file, setFile] = useState(null)
   const [msg, setMsg] = useState(null)
+  const [err, setErr] = useState(null)
+
+  useEffect(() => {
+    if (!user) return
+    setBio(user.bio || '')
+  }, [user])
 
   const save = async (e) => {
     e.preventDefault()
-    const updated = await api.updateMe(user.token, { bio, avatar })
-    // aggiorna il contesto auth se il backend ritorna i dati utente
-    login({ ...user, ...updated })
-    setMsg('Profilo aggiornato!')
+    setErr(null); setMsg(null)
+    try {
+      await api.updateProfile({ bio, file })
+      const me = await api.me()
+      login(me)
+      setMsg('Profilo aggiornato!')
+    } catch (ex) { setErr(ex.message) }
   }
 
   return (
@@ -22,11 +31,12 @@ export default function EditProfile() {
       <form onSubmit={save}>
         <label>Bio</label>
         <textarea value={bio} onChange={e=>setBio(e.target.value)} />
-        <label>Avatar (URL)</label>
-        <input value={avatar} onChange={e=>setAvatar(e.target.value)} />
+        <label>Foto profilo</label>
+        <input type="file" accept="image/*" onChange={e=>setFile(e.target.files?.[0]||null)} />
         <button>Salva</button>
       </form>
       {msg && <div className="ok">{msg}</div>}
+      {err && <div className="error">{err}</div>}
     </div>
   )
 }
