@@ -15,10 +15,10 @@
     "express": "^4.19.2",
     "express-session": "^1.17.3",
     "google-auth-library": "^9.0.0",
-    "helmet": "^7.1.0",            // ✅ aggiungi
+    "helmet": "^7.1.0",            
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^7.6.0",
-    "morgan": "^1.10.0",           // ✅ aggiungi
+    "morgan": "^1.10.0",           
     "multer": "^1.4.5-lts.1"
   }
 }
