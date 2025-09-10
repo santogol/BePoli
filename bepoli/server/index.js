@@ -572,7 +572,7 @@ app.get('/api/posts', async (req, res) => {
           desc: post.desc,
           location: post.location,
           createdAt: post.createdAt,
-          imageUrl: post.image?.data ? /api/post-image/${post._id} : null,
+          imageUrl: post.image?.data ? `/api/post-image/${post._id}` : null,
           likes: post.likes.length,
           comments: post.comments.length,
           commentsData: (post.comments || []).map(comment => ({
@@ -695,5 +695,6 @@ if (isProd) {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(Server attivo su porta ${PORT} (${NODE_ENV}))
 })
+
 
 
