@@ -693,8 +693,9 @@ if (isProd) {
 
 /* ===== START ===== */
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(Server attivo su porta ${PORT} (${NODE_ENV}))
+  console.log(`Server attivo su porta ${PORT} (${NODE_ENV})`)
 })
+
 
 
 
