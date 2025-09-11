@@ -1,7 +1,11 @@
 // bepoli/client/src/api.js
 import axios from 'axios';
 
-const baseURL = import.meta.env.VITE_API_URL || ''; // stessa origin in prod
+const isProd = import.meta.env.PROD;
+// In produzione usa la stessa origin (stringa vuota)
+// In sviluppo usa VITE_API_URL o il fallback localhost:3000
+const baseURL = isProd ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
+
 export const api = axios.create({
   baseURL,
   withCredentials: true
@@ -16,7 +20,7 @@ async function ensureCsrf() {
 
 api.interceptors.request.use(async (config) => {
   const method = (config.method || 'get').toLowerCase();
-  const needsCsrf = ['post', 'put', 'patch', 'delete'].includes(method);
+  const needsCsrf = ['post','put','patch','delete'].includes(method);
   if (needsCsrf && !api.defaults.headers.common['CSRF-Token']) {
     csrfLoading = csrfLoading || ensureCsrf();
     await csrfLoading;
