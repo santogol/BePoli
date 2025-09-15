@@ -1,17 +1,17 @@
-import React from 'react'
+// client/src/main.jsx
+import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
-import './styles/app.css'   // se ce l’hai; altrimenti rimuovi questa riga
+import { AuthProvider } from './context/AuthContext'
+import './styles/app.css' // o il tuo css, se c'è
 
 createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+  <StrictMode>
     <BrowserRouter>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </BrowserRouter>
-  </React.StrictMode>
+  </StrictMode>
 )
-
-
-
-
