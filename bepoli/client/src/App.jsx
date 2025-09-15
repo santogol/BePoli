@@ -1,32 +1,28 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext.jsx'
-import { LocationProvider } from './context/LocationContext.jsx'
-import Header from './components/Header.jsx'
-import Home from './routes/Home.jsx'
-import Login from './routes/Login.jsx'
-import Profile from './routes/Profile.jsx'
-import EditProfile from './routes/EditProfile.jsx'
-
-function PrivateRoute({ children }) {
-  const { user } = useAuth()
-  return user ? children : <Navigate to="/login" replace />
-}
+import { Routes, Route, Navigate } from 'react-router-dom';
+import ProtectedRoutes from './routes/ProtectedRoutes';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import HomePage from './pages/HomePage';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <LocationProvider>
-        <Header />
-        <Routes>
-          <Route path="/" element={<PrivateRoute><Home/></PrivateRoute>} />
-          <Route path="/login" element={<Login/>} />
-          <Route path="/profile" element={<PrivateRoute><Profile/></PrivateRoute>} />
-          <Route path="/profile/:id" element={<PrivateRoute><Profile/></PrivateRoute>} />
-          <Route path="/profile/edit" element={<PrivateRoute><EditProfile/></PrivateRoute>} />
-        </Routes>
-      </LocationProvider>
-    </AuthProvider>
-  )
-}
+    <Routes>
+      {/* Pubbliche */}
+      <Route path="/login" element={<LoginPage/>} />
+      <Route path="/register" element={<RegisterPage/>} />
 
+      {/* Protette */}
+      <Route element={<ProtectedRoutes/>}>
+        <Route path="/" element={<HomePage/>} />
+      </Route>
+
+      {/* Back-compat */}
+      <Route path="/home" element={<Navigate to="/" replace/>} />
+
+      {/* 404 */}
+      <Route path="*" element={<NotFound/>} />
+    </Routes>
+  );
+}
 
