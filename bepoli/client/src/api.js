@@ -1,28 +1,30 @@
 import axios from 'axios';
 
-const isProd = import.meta.env.PROD;
-const baseURL = isProd ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:3000');
-
+const baseURL = import.meta.env.VITE_API_URL || ''; // stessa origin in prod
 export const api = axios.create({
   baseURL,
-  withCredentials: true, // necessario per i cookie di sessione
+  withCredentials: true, // necessario per cookie di sessione
 });
 
-// ---- CSRF helper ----
-let csrfLoading = null;
-async function fetchCsrf() {
-  const { data } = await api.get('/csrf-token');
-  api.defaults.headers.common['CSRF-Token'] = data.csrfToken;
+// prendi il token e salvalo sull'istanza
+export async function ensureCsrf() {
+  const { data } = await api.get('/csrf-token', { withCredentials: true });
+  // usa minuscolo:
+  api.defaults.headers.common['csrf-token'] = data.csrfToken;
 }
 
-// Interceptor: prima di POST/PUT/PATCH/DELETE assicura il token CSRF
+// Interceptor: prima di ogni write, assicurati di avere il token e metterlo nell'header
 api.interceptors.request.use(async (config) => {
-  const m = (config.method || 'get').toLowerCase();
-  const needsCsrf = ['post', 'put', 'patch', 'delete'].includes(m);
-  if (needsCsrf && !api.defaults.headers.common['CSRF-Token']) {
-    csrfLoading = csrfLoading || fetchCsrf();
-    await csrfLoading;
-    csrfLoading = null;
+  const method = (config.method || 'get').toLowerCase();
+  const needsToken = ['post', 'put', 'patch', 'delete'].includes(method);
+
+  if (needsToken) {
+    if (!api.defaults.headers.common['csrf-token']) {
+      const { data } = await api.get('/csrf-token', { withCredentials: true });
+      api.defaults.headers.common['csrf-token'] = data.csrfToken;
+    }
+    config.headers['csrf-token'] = api.defaults.headers.common['csrf-token'];
+    config.withCredentials = true;
   }
   return config;
 });
