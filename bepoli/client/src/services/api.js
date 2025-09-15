@@ -2,24 +2,24 @@
 
 const BASE = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
 
-let csrf = null
-export async function ensureCsrf() {
-  if (csrf) return csrf
-  const r = await fetch(${BASE}/csrf-token, { credentials: 'include' })
-  const j = await r.json()
-  csrf = j.csrfToken
-  return csrf
+let csrfToken = null
+async function fetchCsrf() {
+  if (csrfToken) return csrfToken
+  const res = await fetch(${BASE}/csrf-token, { credentials: 'include' })
+  const data = await res.json()
+  csrfToken = data.csrfToken
+  return csrfToken
 }
 
-async function jfetch(path, opts) {
-  opts = opts || {}
-  const method = opts.method || 'GET'
-  const body = opts.body
-  const requireCsrf = !!opts.requireCsrf
-  const headers = Object.assign({}, opts.headers || {})
+async function jfetch(path, options) {
+  options = options || {}
+  const method = options.method || 'GET'
+  const body = options.body
+  const headers = options.headers ? { ...options.headers } : {}
+  const requireCsrf = !!options.requireCsrf
 
   if (requireCsrf) {
-    const token = await ensureCsrf()
+    const token = await fetchCsrf()
     headers['csrf-token'] = token
   }
 
@@ -31,8 +31,8 @@ async function jfetch(path, opts) {
   })
 
   if (!res.ok) {
-    // prova a dare indizio utile dal body
-    const text = await res.text().catch(() => '')
+    let text = ''
+    try { text = await res.text() } catch {}
     throw new Error(text || res.statusText)
   }
 
@@ -40,52 +40,58 @@ async function jfetch(path, opts) {
   return ct.includes('application/json') ? res.json() : res.text()
 }
 
-export const api = {
+const api = {
   // Auth
-  login: (username, password) =>
-    jfetch('/login', {
+  login(username, password) {
+    return jfetch('/login', {
       method: 'POST',
       requireCsrf: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
-    }),
+    })
+  },
 
-  register: (nome, username, password) =>
-    jfetch('/register', {
+  register(nome, username, password) {
+    return jfetch('/register', {
       method: 'POST',
       requireCsrf: true,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome, username, password })
-    }),
+    })
+  },
 
-  authToken: () => jfetch('/api/auth-token'),
+  authToken() { return jfetch('/api/auth-token') },
 
   // Me & profili
-  me: () => jfetch('/api/user'),
-  userPublic: (id) => jfetch(/api/user-public/${id}),
-  userPosts: (id) => jfetch(/api/user/${id}/posts),
+  me() { return jfetch('/api/user') },
+  userPublic(id) { return jfetch(/api/user-public/${id}) },
+  userPosts(id) { return jfetch(/api/user/${id}/posts) },
 
-  updateProfile: ({ bio, file }) => {
+  updateProfile({ bio, file }) {
     const fd = new FormData()
     if (bio !== undefined) fd.append('bio', bio)
     if (file) fd.append('profilePic', file)
     return jfetch('/api/update-profile', { method: 'POST', requireCsrf: true, body: fd })
   },
-  userPhotoUrl: (id) => ${BASE}/api/user-photo/${id},
+
+  userPhotoUrl(id) { return ${BASE}/api/user-photo/${id} },
 
   // Social
-  searchUsers: (q, page = 1, limit = 10) =>
-    jfetch(/api/search-users?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}),
-  visitUser: (id) => jfetch(/api/visit-user/${id}, { method: 'POST' }),
-  recentUsers: () => jfetch(/api/recent-users),
-  followToggle: (id) => jfetch(/api/follow/${id}, { method: 'POST' }),
-  followInfo: (id) => jfetch(/api/follow-info/${id}),
+  searchUsers(q, page = 1, limit = 10) {
+    return jfetch(/api/search-users?q=${encodeURIComponent(q)}&page=${page}&limit=${limit})
+  },
+  visitUser(id) { return jfetch(/api/visit-user/${id}, { method: 'POST' }) },
+  recentUsers() { return jfetch(/api/recent-users) },
+  followToggle(id) { return jfetch(/api/follow/${id}, { method: 'POST' }) },
+  followInfo(id) { return jfetch(/api/follow-info/${id}) },
 
   // Post
-  feed: (location, page = 1) =>
-    jfetch(/api/posts?location=${encodeURIComponent(location || 'Fuori dalle aree conosciute')}&page=${page}),
+  feed(location, page = 1) {
+    const loc = encodeURIComponent(location || 'Fuori dalle aree conosciute')
+    return jfetch(/api/posts?location=${loc}&page=${page})
+  },
 
-  createPost: ({ desc, imageFile, location }) => {
+  createPost({ desc, imageFile, location }) {
     const fd = new FormData()
     if (desc) fd.append('desc', desc)
     if (location) fd.append('location', location)
@@ -93,16 +99,18 @@ export const api = {
     return jfetch('/api/posts', { method: 'POST', body: fd })
   },
 
-  likePost: (id) => jfetch(/api/posts/${id}/like, { method: 'POST' }),
-  commentPost: (id, text) =>
-    jfetch(/api/posts/${id}/comment, {
+  likePost(id) { return jfetch(/api/posts/${id}/like, { method: 'POST' }) },
+  commentPost(id, text) {
+    return jfetch(/api/posts/${id}/comment, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text })
-    }),
-  getComments: (id) => jfetch(/api/posts/${id}/comments),
-  postImageUrl: (id) => ${BASE}/api/post-image/${id},
+    })
+  },
+  getComments(id) { return jfetch(/api/posts/${id}/comments) },
 
   // Logout
-  logout: () => jfetch('/logout', { method: 'POST', requireCsrf: true })
+  logout() { return jfetch('/logout', { method: 'POST', requireCsrf: true }) }
 }
+
+export { api, fetchCsrf as ensureCsrf }
