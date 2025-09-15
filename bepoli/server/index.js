@@ -24,7 +24,7 @@ const {
   MONGO_URI,
   SESSION_SECRET = 'change-me',
   JWT_SECRET = 'change-me',
-  ORIGIN = 'https://bepoli.onrender.com,http://localhost:5173',
+  ORIGIN = 'https://bepoli-2.onrender.com,http://localhost:5173',
   GOOGLE_CLIENT_ID = '42592859457-ausft7g5gohk7mf96st2047ul9rk8o0v.apps.googleusercontent.com'
 } = process.env
 const isProd = NODE_ENV === 'production'
@@ -46,34 +46,41 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
 app.use(cookieParser())
 
-// CORS (lista di origini)
+// CORS (lista origini consentite)
 app.use(cors({
-  origin: (process.env.ORIGIN || 'https://bepoli-2.onrender.com').split(',').map(s => s.trim()),
+  origin: (ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean),
   credentials: true
-}));
+}))
 
-// COOP/COEP
+// COOP/COEP (opzionale)
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp')
   next()
 })
 
-// Sessione
+// Sessione (prima del CSRF)
 app.use(session({
   secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   rolling: true,
   cookie: {
-    maxAge: 1000 * 60 * 30, // 30 minuti
+    maxAge: 1000 * 60 * 30, // 30 min
     httpOnly: true,
     secure: isProd,
     sameSite: 'lax'
   }
 }))
 
+// CSRF (dopo sessione & cookieParser)
 const csrfProtection = csrf({ cookie: false })
+app.use(csrfProtection)
+
+// Endpoint pubblico per ottenere il token CSRF
+app.get('/csrf-token', (req, res) => {
+  res.json({ csrfToken: req.csrfToken() })
+})
 
 // ===== DB =====
 mongoose.set('strictQuery', true)
@@ -716,6 +723,7 @@ if (isProd) {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server attivo su porta ${PORT} (${NODE_ENV})`)
 })
+
 
 
 
