@@ -1,20 +1,47 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { api } from '../services/api'
+import { createContext, useContext, useEffect, useState } from 'react';
+import { api } from '../api';
 
-const Ctx = createContext(null)
-export const useAuth = () => useContext(Ctx)
+const AuthContext = createContext(null);
+export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true); // loading iniziale
 
-  // prova a riprendere sessione dal server
+  // tenta di leggere /api/user al mount per ripristinare la sessione
   useEffect(() => {
-    api.me().then(setUser).catch(() => setUser(null))
-  }, [])
+    let alive = true;
+    (async () => {
+      try {
+        const { data } = await api.get('/api/user');
+        if (alive) setUser(data);
+      } catch {
+        if (alive) setUser(null);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
-  const login = (u) => setUser(u)
-  const logout = async () => { await api.logout(); setUser(null) }
+  const login = async (username, password) => {
+    await api.post('/login', { username, password });
+    const { data } = await api.get('/api/user');
+    setUser(data);
+  };
 
-  return <Ctx.Provider value={{ user, login, logout }}>{children}</Ctx.Provider>
+  const register = async ({ nome, username, password }) => {
+    await api.post('/register', { nome, username, password });
+  };
+
+  const logout = async () => {
+    try { await api.post('/logout'); } catch {}
+    setUser(null);
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
-
