@@ -719,10 +719,24 @@ if (isProd) {
   app.get('*', (req, res) => res.sendFile(path.join(clientDist, 'index.html')))
 }
 
+// Middleware finale di gestione errori (DEVE stare dopo le route)
+app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ message: 'CSRF non valido' })
+  }
+  console.error('[SERVER ERROR]', err)
+  res.status(500).json({ message: 'Errore server' })
+})
+
+// Avvio server
+app.listen(PORT, () => {
+  console.log(Server attivo su porta ${PORT} (${NODE_ENV}))
+})
 /* ===== START ===== */
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server attivo su porta ${PORT} (${NODE_ENV})`)
 })
+
 
 
 
