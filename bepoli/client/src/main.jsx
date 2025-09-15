@@ -5,7 +5,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import App from './App';
-import './styles/app.css';
+import './style/app.css';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -14,3 +14,4 @@ createRoot(document.getElementById('root')).render(
     </AuthProvider>
   </BrowserRouter>
 );
+
