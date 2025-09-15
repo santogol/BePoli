@@ -1,48 +1,53 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { api } from '../services/api';
+// client/src/context/AuthContext.jsx
+import { createContext, useContext, useEffect, useState } from 'react'
+import { api } from '../services/api'
 
-const AuthContext = createContext(null);
-export const useAuth = () => useContext(AuthContext);
+// Default non nullo
+const defaultAuth = {
+  user: null,
+  ready: false,
+  login: async () => {},
+  register: async () => {},
+  logout: async () => {},
+}
+const AuthCtx = createContext(defaultAuth)
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true); // loading iniziale
+  const [user, setUser] = useState(null)
+  const [ready, setReady] = useState(false)
 
-  // tenta di leggere /api/user al mount per ripristinare la sessione
   useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const { data } = await api.get('/api/user');
-        if (alive) setUser(data);
-      } catch {
-        if (alive) setUser(null);
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => { alive = false; };
-  }, []);
+    let alive = true
+    api.me()
+      .then(u => { if (alive) setUser(u) })
+      .catch(() => { if (alive) setUser(null) })
+      .finally(() => { if (alive) setReady(true) })
+    return () => { alive = false }
+  }, [])
 
   const login = async (username, password) => {
-    await api.post('/login', { username, password });
-    const { data } = await api.get('/api/user');
-    setUser(data);
-  };
+    await api.login(username, password)
+    const me = await api.me()
+    setUser(me)
+  }
 
-  const register = async ({ nome, username, password }) => {
-    await api.post('/register', { nome, username, password });
-  };
+  const register = async (nome, username, password) => {
+    await api.register(nome, username, password)
+    const me = await api.me()
+    setUser(me)
+  }
 
   const logout = async () => {
-    try { await api.post('/logout'); } catch {}
-    setUser(null);
-  };
+    await api.logout()
+    setUser(null)
+  }
 
   return (
-    <AuthContext.Provider value={{ user, setUser, loading, login, register, logout }}>
+    <AuthCtx.Provider value={{ user, ready, login, register, logout }}>
       {children}
-    </AuthContext.Provider>
-  );
+    </AuthCtx.Provider>
+  )
 }
+
+export const useAuth = () => useContext(AuthCtx)
 
