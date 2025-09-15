@@ -1,38 +1,91 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { api, ensureCsrf } from '../services/api';
 
 export default function RegisterPage() {
-  const { register, login } = useAuth();
-  const nav = useNavigate();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ nome: '', username: '', password: '' });
-  const [err, setErr] = useState('');
-  const onChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState(null);     // { type: 'error'|'success', text: string }
+
+  const onChange = (e) => {
+    const { name, value } = e.target;
+    setForm((f) => ({ ...f, [name]: value }));
+  };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setErr('');
+    setMsg(null);
+    if (!form.nome || !form.username || !form.password) {
+      setMsg({ type: 'error', text: 'Compila tutti i campi.' });
+      return;
+    }
+    setLoading(true);
     try {
-      await register(form);
-      // login immediato
-      await login(form.username.trim(), form.password);
-      nav('/', { replace: true });
-    } catch (error) {
-      setErr(error?.response?.data?.message || 'Errore registrazione');
+      await ensureCsrf();
+      await api.post('/register', {
+        nome: form.nome.trim(),
+        username: form.username.trim(),
+        password: form.password,
+      });
+
+      // opzionale: auto-login subito dopo la registrazione
+      await ensureCsrf();
+      await api.post('/login', {
+        username: form.username.trim(),
+        password: form.password,
+      });
+
+      setMsg({ type: 'success', text: 'Registrazione riuscita! Ti sto portando alla Home…' });
+      navigate('/', { replace: true });
+    } catch (err) {
+      const data = err?.response?.data;
+      const text =
+        data?.message ||
+        data?.error ||
+        'Registrazione fallita. Riprova.';
+      setMsg({ type: 'error', text });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="auth-wrap">
-      <h1>Crea account</h1>
-      <form onSubmit={onSubmit} className="auth-form">
-        <input name="nome" placeholder="Nome" value={form.nome} onChange={onChange} />
-        <input name="username" placeholder="Username" value={form.username} onChange={onChange} />
-        <input type="password" name="password" placeholder="Password" value={form.password} onChange={onChange} />
-        <button type="submit">Registrati</button>
-        {err && <p className="error">{err}</p>}
+    <div style={styles.wrap}>
+      <h1>BePoli — Registrati</h1>
+      <form onSubmit={onSubmit} style={styles.form}>
+        <label>
+          Nome
+          <input name="nome" value={form.nome} onChange={onChange} autoComplete="name" />
+        </label>
+        <label>
+          Username
+          <input name="username" value={form.username} onChange={onChange} autoComplete="username" />
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" value={form.password} onChange={onChange} autoComplete="new-password" />
+        </label>
+
+        <button type="submit" disabled={loading}>
+          {loading ? 'Invio…' : 'Crea account'}
+        </button>
       </form>
-      <p>Hai già un account? <Link to="/login">Accedi</Link></p>
+
+      {msg && (
+        <p style={{ color: msg.type === 'error' ? 'crimson' : 'green', marginTop: 12 }}>
+          {msg.text}
+        </p>
+      )}
+
+      <p style={{ marginTop: 16 }}>
+        Hai già un account? <Link to="/login">Accedi</Link>
+      </p>
     </div>
   );
 }
+
+const styles = {
+  wrap: { maxWidth: 420, margin: '40px auto', padding: 16 },
+  form: { display: 'grid', gap: 12 },
+};
