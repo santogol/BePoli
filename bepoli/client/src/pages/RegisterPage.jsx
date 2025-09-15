@@ -1,47 +1,38 @@
-// bepoli/client/src/pages/RegisterPage.jsx
-import React, { useState } from 'react';
-import { api } from '../api';
+import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function RegisterPage() {
-  const [nome, setNome] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [msg, setMsg] = useState('');
+  const { register, login } = useAuth();
+  const nav = useNavigate();
+  const [form, setForm] = useState({ nome: '', username: '', password: '' });
   const [err, setErr] = useState('');
+  const onChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    setErr(''); setMsg('');
+    setErr('');
     try {
-      await api.post('/register', { nome, username, password });
-      setMsg('Registrazione completata. Ora puoi accedere.');
-      setTimeout(() => { window.location.href = '/login'; }, 800);
-    } catch (e) {
-      setErr(e?.response?.data?.message || 'Errore registrazione');
+      await register(form);
+      // login immediato
+      await login(form.username.trim(), form.password);
+      nav('/', { replace: true });
+    } catch (error) {
+      setErr(error?.response?.data?.message || 'Errore registrazione');
     }
   };
 
   return (
-    <div style={styles.wrap}>
-      <h1>Registrati</h1>
-      <form onSubmit={onSubmit} style={styles.form}>
-        <input style={styles.input} value={nome} onChange={(e)=>setNome(e.target.value)} placeholder="Nome" />
-        <input style={styles.input} value={username} onChange={(e)=>setUsername(e.target.value)} placeholder="Username" />
-        <input style={styles.input} value={password} onChange={(e)=>setPassword(e.target.value)} type="password" placeholder="Password" />
-        <button style={styles.btn}>Crea</button>
+    <div className="auth-wrap">
+      <h1>Crea account</h1>
+      <form onSubmit={onSubmit} className="auth-form">
+        <input name="nome" placeholder="Nome" value={form.nome} onChange={onChange} />
+        <input name="username" placeholder="Username" value={form.username} onChange={onChange} />
+        <input type="password" name="password" placeholder="Password" value={form.password} onChange={onChange} />
+        <button type="submit">Registrati</button>
+        {err && <p className="error">{err}</p>}
       </form>
-      {msg && <p style={{ color: 'seagreen' }}>{msg}</p>}
-      {err && <p style={{ color: 'crimson' }}>{err}</p>}
-      <p style={{marginTop: 10}}>
-        Hai già un account? <a href="/login">Accedi</a>
-      </p>
+      <p>Hai già un account? <Link to="/login">Accedi</Link></p>
     </div>
   );
 }
-
-const styles = {
-  wrap: { maxWidth: 360, margin: '60px auto', fontFamily: 'system-ui, sans-serif' },
-  form: { display: 'flex', flexDirection: 'column', gap: 10 },
-  input: { padding: 10, border: '1px solid #ccc', borderRadius: 6 },
-  btn: { padding: 10, border: '1px solid #222', background: '#222', color: 'white', borderRadius: 6, cursor: 'pointer' }
-};
