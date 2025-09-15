@@ -3,25 +3,25 @@ import ProtectedRoutes from './routes/ProtectedRoutes';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import HomePage from './pages/HomePage';
-import NotFound from './pages/NotFound';
+import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
   return (
     <Routes>
-      {/* Pubbliche */}
-      <Route path="/login" element={<LoginPage/>} />
-      <Route path="/register" element={<RegisterPage/>} />
+      {/* Rotte pubbliche */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
 
-      {/* Protette */}
-      <Route element={<ProtectedRoutes/>}>
-        <Route path="/" element={<HomePage/>} />
+      {/* Rotte protette */}
+      <Route element={<ProtectedRoutes />}>
+        <Route path="/" element={<HomePage />} />
       </Route>
 
-      {/* Back-compat */}
-      <Route path="/home" element={<Navigate to="/" replace/>} />
+      {/* Redirect vecchio /home → / */}
+      <Route path="/home" element={<Navigate to="/" replace />} />
 
       {/* 404 */}
-      <Route path="*" element={<NotFound/>} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
