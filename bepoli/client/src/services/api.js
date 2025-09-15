@@ -45,40 +45,32 @@ export const api = {
   userPublic: (id) => jfetch(`/api/user-public/${id}`),
   userPosts: (id) => jfetch(`/api/user/${id}/posts`),
 
-  // Profilo
-  updateProfile: async ({ bio, file }) => {
-    const fd = new FormData()
-    if (bio !== undefined) fd.append('bio', bio)
-    if (file) fd.append('profilePic', file)
-    return jfetch('/api/update-profile', { method: 'POST', requireCsrf: true, body: fd })
-  },
-  userPhotoUrl: (id) => `${BASE}/api/user-photo/${id}`,
 
-  // Social
-  searchUsers: (q, page=1, limit=10) => jfetch(`/api/search-users?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`),
-  visitUser: (id) => jfetch(`/api/visit-user/${id}`, { method: 'POST' }),
-  recentUsers: () => jfetch(`/api/recent-users`),
-  followToggle: (id) => jfetch(`/api/follow/${id}`, { method: 'POST' }),
-  followInfo: (id) => jfetch(`/api/follow-info/${id}`),
+  // Profile
+updateProfile: async ({ bio, file }) => {
+  const fd = new FormData();
+  if (bio !== undefined) fd.append('bio', bio);
+  if (file) fd.append('profilePic', file);
+  return jfetch('/api/update-profile', { method: 'POST', requireCsrf: true, body: fd });
+},
 
-  // Post
-  feed: (location, page=1) => jfetch(`/api/posts?location=${encodeURIComponent(location||'Fuori dalle aree conosciute')}&page=${page}`),
-  createPost: async ({ desc, imageFile, location }) => {
-    const fd = new FormData()
-    if (desc) fd.append('desc', desc)
-    if (location) fd.append('location', location)
-    if (imageFile) fd.append('image', imageFile)
-    return jfetch('/api/posts', { method:'POST', body: fd })
-  },
-  likePost: (id) => jfetch(`/api/posts/${id}/like`, { method:'POST' }),
-  commentPost: (id, text) => jfetch(`/api/posts/${id}/comment`, {
-    method:'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
-  }),
-  getComments: (id) => jfetch(`/api/posts/${id}/comments`),
-  postImageUrl: (id) => `${BASE}/api/post-image/${id}`,
+// Social
+visitUser: (id) => jfetch(/api/visit-user/${id}, { method: 'POST', requireCsrf: true }),
+followToggle: (id) => jfetch(/api/follow/${id}, { method: 'POST', requireCsrf: true }),
 
-  // Logout
-  logout: () => jfetch('/logout', { method: 'POST', requireCsrf: true })
-}
+// Post
+createPost: async ({ desc, imageFile, location }) => {
+  const fd = new FormData();
+  if (desc) fd.append('desc', desc);
+  if (location) fd.append('location', location);
+  if (imageFile) fd.append('image', imageFile);
+  return jfetch('/api/posts', { method:'POST', requireCsrf: true, body: fd });
+},
+likePost: (id) => jfetch(/api/posts/${id}/like, { method:'POST', requireCsrf: true }),
+commentPost: (id, text) => jfetch(/api/posts/${id}/comment, {
+  method:'POST',
+  requireCsrf: true,
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ text })
+}),
+  
