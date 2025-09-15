@@ -728,14 +728,20 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Errore server' })
 })
 
-// Avvio server
-app.listen(PORT, () => {
-  console.log(Server attivo su porta ${PORT} (${NODE_ENV}))
-})
-/* ===== START ===== */
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server attivo su porta ${PORT} (${NODE_ENV})`)
-})
+// --- SPA fallback (dopo TUTTE le API) ---
+const distDir = path.join(__dirnameResolved, 'client', 'dist');
+app.use(express.static(distDir));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distDir, 'index.html'));
+});
+
+// --- avvio server ---
+const port = Number(PORT) || 10000;
+app.listen(port, () => {
+  console.log(`Server attivo su porta ${port} (${NODE_ENV})`);
+});
+
+
 
 
 
