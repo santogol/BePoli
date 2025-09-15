@@ -1,13 +1,12 @@
-// bepoli/client/src/pages/HomePage.jsx
-import React from 'react';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function HomePage() {
   const { user, logout } = useAuth();
+  if (!user) return null;
   return (
-    <div style={{maxWidth: 600, margin: '40px auto', fontFamily:'system-ui, sans-serif'}}>
-      <h1>Ciao {user?.nome}</h1>
-      <p>Se vedi questa pagina, sei autenticato. Qui metteremo il feed.</p>
+    <div className="page">
+      <h2>Ciao, {user.nome || user.username} 👋</h2>
+      <p>Home minimale. Da qui poi inseriamo feed, post, ecc.</p>
       <button onClick={logout}>Logout</button>
     </div>
   );
