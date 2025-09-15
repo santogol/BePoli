@@ -48,9 +48,9 @@ app.use(cookieParser())
 
 // CORS (lista di origini)
 app.use(cors({
-  origin: ORIGIN.split(',').map(s => s.trim()),
+  origin: (process.env.ORIGIN || 'https://bepoli-2.onrender.com').split(',').map(s => s.trim()),
   credentials: true
-}))
+}));
 
 // COOP/COEP
 app.use((req, res, next) => {
@@ -211,25 +211,46 @@ app.post('/auth/google', async (req, res) => {
 })
 
 // Registrazione
+
 app.post('/register', csrfProtection, async (req, res) => {
-  const { nome, username, password } = req.body || {}
-  if (!nome || !username || !password) return res.status(400).json({ message: 'Dati mancanti' })
+  const { nome, username, password } = req.body || {};
+  if (!nome || !username || !password) {
+    return res.status(400).json({ message: 'Dati mancanti' });
+  }
+
   try {
-    if (await Utente.findOne({ username })) return res.status(400).json({ message: 'Username già esistente' })
-    const hash = await bcrypt.hash(password, 10)
+    const exists = await Utente.findOne({ username });
+    if (exists) {
+      return res.status(400).json({ message: 'Username già esistente' });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
     await Utente.create({
       nome,
       username,
       password: hash,
       bio: '',
       profilePic: { data: null, contentType: null }
-    })
-    res.status(201).json({ message: 'Registrazione completata' })
+    });
+
+    return res.status(201).json({ message: 'Registrazione completata' });
+
   } catch (err) {
-    console.error(err)
-    res.status(500).json({ message: 'Errore server' })
+    // Log dettagliato per capire i 500
+    console.error('[REGISTER ERROR]', err);
+
+    // In caso di indice unico lato DB:
+    if (err?.code === 11000) {
+      return res.status(400).json({ message: 'Username già esistente' });
+    }
+
+    return res.status(500).json({
+      message: 'Errore server',
+      detail: err?.name,
+      error: err?.message
+    });
   }
-})
+});
 
 // Update profilo (bio + foto)
 app.post('/api/update-profile', checkFingerprint, csrfProtection, upload.single('profilePic'), async (req, res) => {
@@ -695,6 +716,7 @@ if (isProd) {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server attivo su porta ${PORT} (${NODE_ENV})`)
 })
+
 
 
 
